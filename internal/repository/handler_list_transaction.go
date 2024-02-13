@@ -14,6 +14,8 @@ func ListTransaction(id int) ([]entities.Transaction, error) {
 		return nil, errors.New("internal error")
 	}
 
+	defer items.Close()
+
 	var transactions []entities.Transaction
 
 	for items.Next() {

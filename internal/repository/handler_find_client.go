@@ -17,6 +17,7 @@ func FindClient(id int) (*entities.Client, error) {
 		slog.Error(err.Error())
 		return nil, errors.New("internal error")
 	}
+	defer item.Close()
 
 	var client entities.Client
 
