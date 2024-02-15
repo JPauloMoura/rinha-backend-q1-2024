@@ -10,7 +10,6 @@ import (
 	"github.com/JPauloMoura/rinha-backend-q1-2024/internal/entities"
 	"github.com/JPauloMoura/rinha-backend-q1-2024/internal/service"
 	"github.com/go-chi/chi/v5"
-	"golang.org/x/exp/slog"
 )
 
 func CreateTransaction(w http.ResponseWriter, r *http.Request) {
