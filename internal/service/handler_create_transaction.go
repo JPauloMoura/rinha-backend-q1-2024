@@ -2,7 +2,6 @@ package service
 
 import (
 	"errors"
-	"log/slog"
 
 	"github.com/JPauloMoura/rinha-backend-q1-2024/internal/entities"
 	"github.com/JPauloMoura/rinha-backend-q1-2024/internal/repository"
@@ -21,7 +20,7 @@ func CreateTransaction(clientId int, t entities.Transaction) (*CreateTransaction
 	// buscar as informaçõe do client
 	client, err := repository.FindClient(clientId)
 	if err != nil {
-		slog.Error(err.Error())
+		// slog.Warn(err.Error())
 		return nil, err
 	}
 
@@ -33,14 +32,14 @@ func CreateTransaction(clientId int, t entities.Transaction) (*CreateTransaction
 	}
 
 	if !client.SaldoIsValid() {
-		slog.Error("new saldo is invalid")
+		// slog.Warn("new saldo is invalid")
 		return nil, errors.New("transaction invalid")
 	}
 
 	t.ClientId = client.Id
 	err = repository.CreateTransaction(client, t)
 	if err != nil {
-		slog.Error(err.Error())
+		// slog.Warn(err.Error())
 		return nil, err
 	}
 

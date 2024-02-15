@@ -1,7 +1,6 @@
 package service
 
 import (
-	"log/slog"
 	"time"
 
 	"github.com/JPauloMoura/rinha-backend-q1-2024/internal/entities"
@@ -12,13 +11,11 @@ import (
 func GenerateExtract(clientId int) (*Extract, error) {
 	client, err := repository.FindClient(clientId)
 	if err != nil {
-		slog.Error(err.Error())
 		return nil, err
 	}
 
 	transactions, err := repository.ListTransaction(client.Id)
 	if err != nil {
-		slog.Error(err.Error())
 		return nil, err
 	}
 
@@ -28,14 +25,17 @@ func GenerateExtract(clientId int) (*Extract, error) {
 }
 
 func NewExtract(c entities.Client, t []entities.Transaction) *Extract {
-	loc, _ := time.LoadLocation("America/Sao_Paulo")
 	ext := Extract{
 		Saldo: ClientSaldo{
 			Total:       c.Saldo,
-			DataExtrato: time.Now().In(loc).Format(date.DATE_BR_WITH_HOURS),
+			DataExtrato: time.Now().In(date.LocationBR()).Format(date.DATE_BR_WITH_HOURS),
 			Limite:      c.Limit,
 		},
 		UltimasTransacoes: make([]ExtractTransaction, 0),
+	}
+
+	if len(t) == 0 {
+		return &ext
 	}
 
 	for _, v := range t {
