@@ -1,0 +1,13 @@
+### Create transaction
+POST http://localhost:3001/clientes/1/transacoes HTTP/1.1
+content-type: application/json
+
+{
+    "valor": 30000,
+    "tipo" : "c",
+    "descricao" : "teste"
+}
+
+### Create extrato
+GET http://localhost:9999/clientes/1/extrato HTTP/1.1
+content-type: application/json
