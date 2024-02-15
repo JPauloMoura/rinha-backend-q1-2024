@@ -13,10 +13,6 @@ import (
 )
 
 func main() {
-	if err := godotenv.Load(); err != nil {
-		log.Panic("failed to loading .env file")
-	}
-
 	defineLogger()
 	repository.ConnectDB()
 
