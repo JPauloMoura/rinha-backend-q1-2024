@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"errors"
 	"log/slog"
 
@@ -8,13 +9,11 @@ import (
 )
 
 func ListTransaction(id int) ([]entities.Transaction, error) {
-	items, err := DB.Query("SELECT * FROM transactions WHERE clientId=$1", id)
+	items, err := DB.Query(context.TODO(), "SELECT * FROM transactions WHERE clientId=$1", id)
 	if err != nil {
 		slog.Error(err.Error())
 		return nil, errors.New("internal error")
 	}
-
-	defer items.Close()
 
 	var transactions []entities.Transaction
 

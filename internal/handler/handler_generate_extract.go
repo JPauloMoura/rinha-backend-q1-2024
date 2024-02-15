@@ -8,19 +8,20 @@ import (
 
 	"github.com/JPauloMoura/rinha-backend-q1-2024/internal/service"
 	"github.com/go-chi/chi/v5"
+	"golang.org/x/exp/slog"
 )
 
 func GenerateExtract(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
-		slog.Error(err.Error())
+		slog.Debug(err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	extract, err := service.GenerateExtract(id)
 	if err != nil {
-		slog.Error(err.Error())
+		slog.Debug(err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
