@@ -14,11 +14,16 @@ func GenerateExtract(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
 		slog.Debug(err.Error())
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
 	extract, err := service.GenerateExtract(id)
+	if err != nil && err.Error() == "client not found" {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
 	if err != nil {
 		slog.Debug(err.Error())
 		w.WriteHeader(http.StatusInternalServerError)

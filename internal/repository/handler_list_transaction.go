@@ -9,7 +9,7 @@ import (
 )
 
 func ListTransaction(id int) ([]entities.Transaction, error) {
-	items, err := DB.Query(context.TODO(), "SELECT * FROM transactions WHERE clientId=$1", id)
+	items, err := DB.Query(context.TODO(), "SELECT * FROM transactions WHERE clientId=$1 ORDER BY realizada_em DESC LIMIT 10", id)
 	if err != nil {
 		slog.Error(err.Error())
 		return nil, errors.New("internal error")
@@ -20,7 +20,7 @@ func ListTransaction(id int) ([]entities.Transaction, error) {
 	for items.Next() {
 		var t entities.Transaction
 
-		if err := items.Scan(&t.Id, &t.ClientId, &t.Value, &t.Type, &t.Description, &t.CreatedAt); err != nil {
+		if err := items.Scan(&t.ClientId, &t.Value, &t.Type, &t.Description, &t.CreatedAt); err != nil {
 			slog.Error(err.Error())
 			return nil, errors.New("internal error")
 		}

@@ -6,7 +6,6 @@ import (
 )
 
 type Transaction struct {
-	Id          int       `json:"id"`
 	ClientId    int       `json:"clientId"`
 	Value       int       `json:"valor"`
 	Type        string    `json:"tipo"`

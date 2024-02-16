@@ -16,7 +16,7 @@ func CreateTransaction(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
 		slog.Debug(err.Error())
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
@@ -24,7 +24,7 @@ func CreateTransaction(w http.ResponseWriter, r *http.Request) {
 	err = json.NewDecoder(r.Body).Decode(&t)
 	if err != nil {
 		slog.Debug(err.Error())
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusUnprocessableEntity)
 		return
 	}
 
@@ -32,11 +32,11 @@ func CreateTransaction(w http.ResponseWriter, r *http.Request) {
 	err = t.Validate()
 	if err != nil {
 		slog.Debug(err.Error())
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusUnprocessableEntity)
 		return
 	}
 
-	_, err = service.CreateTransaction(id, t)
+	resp, err := service.CreateTransaction(id, t)
 	if err != nil && err.Error() == "client not found" {
 		w.WriteHeader(http.StatusNotFound)
 		return
@@ -54,5 +54,5 @@ func CreateTransaction(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-
+	json.NewEncoder(w).Encode(resp)
 }

@@ -8,19 +8,13 @@ import (
 )
 
 type CreateTransactionResponse struct {
-	Limit int `json:"limite"`
 	Saldo int `json:"saldo"`
+	Limit int `json:"limite"`
 }
 
 func CreateTransaction(clientId int, t entities.Transaction) (*CreateTransactionResponse, error) {
-	// 'c' -> adicionat o valor ao saldo
-	// 'd' -> descontar o valor do saldo
-	// o limite é apenas um valor de consulta para as  validações
-
-	// buscar as informaçõe do client
 	client, err := repository.FindClient(clientId)
 	if err != nil {
-		// slog.Warn(err.Error())
 		return nil, err
 	}
 
@@ -32,19 +26,17 @@ func CreateTransaction(clientId int, t entities.Transaction) (*CreateTransaction
 	}
 
 	if !client.SaldoIsValid() {
-		// slog.Warn("new saldo is invalid")
 		return nil, errors.New("transaction invalid")
 	}
 
 	t.ClientId = client.Id
 	err = repository.CreateTransaction(client, t)
 	if err != nil {
-		// slog.Warn(err.Error())
 		return nil, err
 	}
 
 	return &CreateTransactionResponse{
-		Limit: client.Limit,
 		Saldo: client.Saldo,
+		Limit: client.Limit,
 	}, nil
 }

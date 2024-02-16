@@ -19,7 +19,6 @@ VALUES
     ('kid mais', 5000 * 100, 0);
 
 CREATE TABLE IF NOT EXISTS transactions (
-    id serial PRIMARY KEY,
     clientId INT,
     valor INT,
     tipo varchar(1),
