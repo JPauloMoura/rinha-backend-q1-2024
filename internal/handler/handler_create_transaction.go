@@ -36,7 +36,7 @@ func CreateTransaction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = service.CreateTransaction(id, t)
+	resp, err := service.CreateTransaction(id, t)
 	if err != nil && err.Error() == "client not found" {
 		w.WriteHeader(http.StatusNotFound)
 		return
@@ -54,5 +54,5 @@ func CreateTransaction(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-
+	json.NewEncoder(w).Encode(resp)
 }
