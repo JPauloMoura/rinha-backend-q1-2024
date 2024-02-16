@@ -28,35 +28,13 @@ func NewExtract(c entities.Client, t []entities.Transaction) *Extract {
 	ext := Extract{
 		Saldo: ClientSaldo{
 			Total:       c.Saldo,
-			DataExtrato: time.Now().In(date.LocationBR()).Format(date.DATE_BR_WITH_HOURS),
+			DataExtrato: time.Now().In(date.LocationBR()).String(),
 			Limite:      c.Limit,
 		},
-		UltimasTransacoes: make([]ExtractTransaction, 0),
-	}
-
-	if len(t) == 0 {
-		return &ext
-	}
-
-	for _, v := range t {
-		e := ExtractTransaction{
-			Valor:       v.Value,
-			Tipo:        v.Type,
-			Descricao:   v.Description,
-			RealizadaEm: v.CreatedAt.Format(date.DATE_BR_WITH_HOURS),
-		}
-
-		ext.UltimasTransacoes = append(ext.UltimasTransacoes, e)
+		UltimasTransacoes: t,
 	}
 
 	return &ext
-}
-
-type ExtractTransaction struct {
-	Valor       int    `json:"valor"`
-	Tipo        string `json:"tipo"`
-	Descricao   string `json:"descricao"`
-	RealizadaEm string `json:"realizada_em"`
 }
 
 type ClientSaldo struct {
@@ -66,6 +44,6 @@ type ClientSaldo struct {
 }
 
 type Extract struct {
-	Saldo             ClientSaldo          `json:"saldo"`
-	UltimasTransacoes []ExtractTransaction `json:"ultimas_transacoes"`
+	Saldo             ClientSaldo            `json:"saldo"`
+	UltimasTransacoes []entities.Transaction `json:"ultimas_transacoes"`
 }
