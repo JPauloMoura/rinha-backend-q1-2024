@@ -9,7 +9,6 @@ services:
   postgres-rinha:
     image: postgres:16-alpine
     container_name: postgres-rinha
-    command: postgres -c 'max_connections=700'
     environment:
       POSTGRES_PASSWORD: password
       POSTGRES_USER: test@localhost.com
@@ -28,7 +27,7 @@ services:
       resources:
         limits:
           cpus: "0.4"
-          memory: "200MB"
+          memory: "140MB"
           
   api-rinha-01: &api
     image: api-rinha
@@ -44,7 +43,7 @@ services:
       resources:
         limits:
           cpus: "0.5"
-          memory: "140MB"
+          memory: "155MB"
 
   api-rinha-02:
     <<: *api
@@ -55,7 +54,7 @@ services:
   nginx:
     image: nginx:latest
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx.conf:/etc/nginx/nginx.conf
     depends_on:
       - api-rinha-01
       - api-rinha-02
@@ -65,7 +64,7 @@ services:
       resources:
         limits:
           cpus: "0.2"
-          memory: "70MB"
+          memory: "100MB"
 
 networks:
   default:

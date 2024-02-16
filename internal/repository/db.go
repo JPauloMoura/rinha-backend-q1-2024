@@ -24,6 +24,9 @@ func ConnectDB() {
 		log.Fatal("failed parse config", err)
 	}
 
+	cfg.MaxConns = 20
+	cfg.MinConns = 10
+
 	conn, err := pgxpool.NewWithConfig(ctx, cfg)
 	if err != nil {
 		slog.Debug("failed to create connection. check if the database is running or if the connection string is correct",
