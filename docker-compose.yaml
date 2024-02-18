@@ -17,7 +17,7 @@ services:
       MIN_CONN: 40
     ports:
       - "8080:8080"
-      # - "3333:3333"
+      - "3333:3333" # profiler port
     depends_on:
       - postgres
     restart: on-failure
@@ -33,7 +33,7 @@ services:
     hostname: api-02
     ports:
       - "8081:8080"
-      # - "3334:3333"
+      - "3334:3333" # profiler port
 
 
   nginx:
@@ -50,7 +50,7 @@ services:
     restart: on-failure
     ports:
       - "9999:9999"
-      # - "9998:9998"
+      - "9998:9998" # profiler port
     deploy:
       resources:
         limits:
