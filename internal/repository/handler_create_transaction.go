@@ -31,7 +31,7 @@ func CreateTransaction(ctx context.Context, clientId int, transaction entities.T
 
 	if err != nil {
 		// slog.Error("client not found", err)
-		return nil, errors.ErrClientNotFound
+		return nil, err
 	}
 
 	switch transaction.Type {
@@ -73,7 +73,7 @@ func CreateTransaction(ctx context.Context, clientId int, transaction entities.T
 	return &CreateTransactionResponse{
 		Saldo: clientSaldo,
 		Limit: clientLimite,
-	}, err
+	}, nil
 }
 
 type CreateTransactionResponse struct {
