@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"time"
 
 	"github.com/JPauloMoura/rinha-backend-q1-2024/internal/entities"
@@ -8,30 +9,31 @@ import (
 	"github.com/JPauloMoura/rinha-backend-q1-2024/pkg/date"
 )
 
-func GenerateExtract(clientId int) (*Extract, error) {
-	client, err := repository.FindClient(clientId)
+func GenerateExtract(ctx context.Context, clientId int) (*Extract, error) {
+	exDb, err := repository.ListTransaction(ctx, clientId)
 	if err != nil {
 		return nil, err
 	}
 
-	transactions, err := repository.ListTransaction(client.Id)
-	if err != nil {
-		return nil, err
-	}
-
-	extract := NewExtract(*client, transactions)
+	extract := NewExtract(exDb)
 
 	return extract, nil
 }
 
-func NewExtract(c entities.Client, t []entities.Transaction) *Extract {
+func NewExtract(ex []repository.ExtractDB) *Extract {
 	ext := Extract{
 		Saldo: ClientSaldo{
-			Total:       c.Saldo,
+			Total:       ex[0].Saldo,
 			DataExtrato: time.Now().In(date.LocationBR()).String(),
-			Limite:      c.Limit,
+			Limite:      ex[0].Limit,
 		},
-		UltimasTransacoes: t,
+		UltimasTransacoes: make([]entities.Transaction, 0),
+	}
+
+	for _, t := range ex {
+		if t.Transaction != nil {
+			ext.UltimasTransacoes = append(ext.UltimasTransacoes, *t.Transaction)
+		}
 	}
 
 	return &ext
