@@ -3,47 +3,59 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
 
 	"github.com/JPauloMoura/rinha-backend-q1-2024/internal/entities"
 	"github.com/JPauloMoura/rinha-backend-q1-2024/internal/repository"
-	errors "github.com/JPauloMoura/rinha-backend-q1-2024/pkg/errors"
 	"github.com/go-chi/chi/v5"
 )
 
-func CreateTransaction(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.Atoi(chi.URLParam(r, "id"))
+func validateRequest(id int, err error, body io.ReadCloser, e *entities.Transaction) int {
 	_, exist := Ids[id]
 	if err != nil || !exist {
-		// slog.Debug("id not found")
-		w.WriteHeader(http.StatusNotFound)
-		return
+		return http.StatusNotFound
 	}
 
+	b, err := io.ReadAll(body)
+	if err != nil {
+		return http.StatusUnprocessableEntity
+	}
+
+	err = json.Unmarshal(b, e)
+	if err != nil {
+		return http.StatusUnprocessableEntity
+	}
+
+	defer body.Close()
+
+	e.Type = strings.ToLower(e.Type)
+	err = e.Validate()
+	if err != nil {
+		return http.StatusUnprocessableEntity
+	}
+
+	return 200
+}
+
+func CreateTransaction(w http.ResponseWriter, r *http.Request) {
 	var t entities.Transaction
-	err = json.NewDecoder(r.Body).Decode(&t)
-	if err != nil {
-		// slog.Debug(err.Error())
-		w.WriteHeader(http.StatusUnprocessableEntity)
-		return
-	}
 
-	t.Type = strings.ToLower(t.Type)
-	err = t.Validate()
-	if err != nil {
-		// slog.Debug(err.Error())
-		w.WriteHeader(http.StatusUnprocessableEntity)
+	id, err := strconv.Atoi(chi.URLParam(r, "id"))
+	code := validateRequest(
+		id, err,
+		r.Body,
+		&t,
+	)
+
+	if code != 200 {
+		w.WriteHeader(code)
 		return
 	}
 
 	resp, err := repository.CreateTransaction(context.TODO(), id, t)
-	if err == errors.ErrClientNotFound {
-		w.WriteHeader(http.StatusNotFound)
-		return
-	}
-
 	if err != nil {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		return
