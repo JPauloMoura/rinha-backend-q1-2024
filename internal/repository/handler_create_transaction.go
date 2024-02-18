@@ -2,61 +2,81 @@ package repository
 
 import (
 	"context"
-	"log/slog"
+	"fmt"
+	"time"
 
 	"github.com/JPauloMoura/rinha-backend-q1-2024/internal/entities"
-	"github.com/jackc/pgx/v5"
+	"github.com/JPauloMoura/rinha-backend-q1-2024/pkg/errors"
 )
 
-func CreateTransaction(client *entities.Client, transaction entities.Transaction) error {
-	tx, err := DB.Begin(context.TODO())
+func timeTrack(start time.Time, name string) {
+	elapsed := time.Since(start)
+	fmt.Println("==> ", name, elapsed.Milliseconds())
+}
+
+func CreateTransaction(ctx context.Context, clientId int, transaction entities.Transaction) (*CreateTransactionResponse, error) {
+	tx, err := DB.Begin(ctx)
 	if err != nil {
-		slog.Error("Error starting transaction: ", err)
-		return err
+		// slog.Error("Error starting transaction: ", err)
+		return nil, err
+	}
+
+	var (
+		clientSaldo  int
+		clientLimite int
+	)
+
+	err = tx.QueryRow(ctx, "SELECT saldo, limite FROM clientes WHERE id = $1 FOR UPDATE", clientId).
+		Scan(&clientSaldo, &clientLimite)
+
+	if err != nil {
+		// slog.Error("client not found", err)
+		return nil, errors.ErrClientNotFound
+	}
+
+	switch transaction.Type {
+	case "c":
+		clientSaldo += transaction.Value
+	case "d":
+		clientSaldo -= transaction.Value
+	}
+
+	if clientSaldo < (clientLimite * -1) {
+		return nil, errors.ErrInvalidTransaction
 	}
 
 	defer func() {
 		if err != nil {
-			tx.Rollback(context.TODO())
-			slog.Error("Transaction rolled back: ", err)
+			tx.Rollback(ctx)
+			// slog.Error("Transaction rolled back: ", err)
 		}
 	}()
 
-	err = saveTransaction(tx, transaction)
+	_, err = tx.Exec(ctx, "INSERT INTO transactions (clientId, valor, tipo, descricao) VALUES ($1, $2, $3, $4)", clientId, transaction.Value, transaction.Type, transaction.Description)
 	if err != nil {
-		return err
+		// slog.Error(err.Error())
+		return nil, err
 	}
 
-	err = updateClientSaldo(tx, client)
+	_, err = tx.Exec(ctx, "UPDATE clientes SET saldo = $1 WHERE id = $2", clientSaldo, clientId)
 	if err != nil {
-		return err
+		// slog.Error(err.Error())
+		return nil, err
 	}
 
-	err = tx.Commit(context.TODO())
+	err = tx.Commit(ctx)
 	if err != nil {
-		slog.Error("Error committing transaction: ", err)
-		return err
+		// slog.Error("Error committing transaction: ", err)
+		return nil, err
 	}
 
-	return nil
+	return &CreateTransactionResponse{
+		Saldo: clientSaldo,
+		Limit: clientLimite,
+	}, err
 }
 
-func saveTransaction(tx pgx.Tx, transaction entities.Transaction) error {
-	_, err := tx.Exec(context.TODO(), "INSERT INTO transactions (clientId, valor, tipo, descricao) VALUES ($1, $2, $3, $4)", transaction.ClientId, transaction.Value, transaction.Type, transaction.Description)
-	if err != nil {
-		slog.Error(err.Error())
-		return err
-	}
-
-	return nil
-}
-
-func updateClientSaldo(tx pgx.Tx, client *entities.Client) error {
-	_, err := tx.Exec(context.TODO(), "UPDATE clientes SET saldo = $1 WHERE id = $2", client.Saldo, client.Id)
-	if err != nil {
-		slog.Error(err.Error())
-		return err
-	}
-
-	return nil
+type CreateTransactionResponse struct {
+	Saldo int `json:"saldo"`
+	Limit int `json:"limite"`
 }

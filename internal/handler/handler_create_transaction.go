@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/JPauloMoura/rinha-backend-q1-2024/internal/entities"
-	"github.com/JPauloMoura/rinha-backend-q1-2024/internal/service"
+	"github.com/JPauloMoura/rinha-backend-q1-2024/internal/repository"
 	errors "github.com/JPauloMoura/rinha-backend-q1-2024/pkg/errors"
 	"github.com/go-chi/chi/v5"
 )
@@ -38,7 +38,7 @@ func CreateTransaction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := service.CreateTransaction(context.TODO(), id, t)
+	resp, err := repository.CreateTransaction(context.TODO(), id, t)
 	if err == errors.ErrClientNotFound {
 		w.WriteHeader(http.StatusNotFound)
 		return
