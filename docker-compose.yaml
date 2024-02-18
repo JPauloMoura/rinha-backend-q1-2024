@@ -5,67 +5,92 @@ services:
 ## cpus 1.5
 ## memory 550MB
 
-# database
-  postgres-rinha:
-    image: postgres:16-alpine
-    container_name: postgres-rinha
+  api-01: &api
+    # image: api
+    build:
+      context: .
+    container_name: api-01
+    hostname: api-01
     environment:
-      POSTGRES_PASSWORD: password
-      POSTGRES_USER: test@localhost.com
-      POSTGRES_DB: rinha_db
-    ports:
-      - 5432:5432
-    volumes:
-      - ./.data/postgres:/var/lib/postgresql/data
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
-    healthcheck:
-      test: [ 'CMD-SHELL', 'pg_isready -U test@localhost.com -d rinha_db' ]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    deploy:
-      resources:
-        limits:
-          cpus: "0.4"
-          memory: "140MB"
-          
-  api-rinha-01: &api
-    image: api-rinha
-    hostname: api-rinha-01
-    environment:
-      DB_CONNECTION_STRING: postgres://test@localhost.com:password@postgres-rinha:5432/rinha_db?sslmode=disable
+      DB_CONNECTION_STRING: postgres://user:password@postgres:5432/rinha_db?sslmode=disable
+      MAX_CONN: 40
+      MIN_CONN: 40
     ports:
       - "8080:8080"
+      # - "3333:3333"
     depends_on:
-      postgres-rinha:
-        condition: service_healthy
+      - postgres
+    restart: on-failure
     deploy:
       resources:
         limits:
           cpus: "0.5"
           memory: "155MB"
 
-  api-rinha-02:
+  api-02:
     <<: *api
-    hostname: api-rinha-02
+    container_name: api-02
+    hostname: api-02
     ports:
       - "8081:8080"
+      # - "3334:3333"
+
 
   nginx:
-    image: nginx:latest
+    container_name: nginx
+    hostname: nginx
+    image: nginx:1.25.4-alpine
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
-      - api-rinha-01
-      - api-rinha-02
+      api-01:
+        condition: service_started
+      api-02:
+        condition: service_started
+    restart: on-failure
     ports:
       - "9999:9999"
+      # - "9998:9998"
     deploy:
       resources:
         limits:
           cpus: "0.2"
-          memory: "100MB"
+          memory: "80MB"
 
+
+# database
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres
+    environment:
+      POSTGRES_PASSWORD: password
+      POSTGRES_USER: user
+      POSTGRES_DB: rinha_db
+    ports:
+      - 5432:5432
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    deploy:
+      resources:
+        limits:
+          cpus: "0.3"
+          memory: "160MB"
+          
+
+# UI pgadmin4
+  pgadmin:
+    image: dpage/pgadmin4:8.2
+    container_name: pgadmin
+    depends_on:
+      - postgres
+    environment:
+      PGADMIN_DEFAULT_EMAIL: jp@gmail.com
+      PGADMIN_DEFAULT_PASSWORD: password
+    ports:
+      - 8082:80
+    volumes:
+      - ./.data/pgadmin:/var/lib/pgadmin
+      
 networks:
   default:
     driver: bridge

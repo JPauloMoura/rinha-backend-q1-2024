@@ -2,7 +2,7 @@
 FROM golang:latest AS build
 
 # Define a pasta de trabalho do container
-WORKDIR /go/src/api-rinha
+WORKDIR /go/src/api
 
 # Copie os arquivos do projeto para a pasta de trabalho
 COPY . .
