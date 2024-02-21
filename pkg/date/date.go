@@ -1,6 +1,7 @@
 package date
 
 import (
+	"fmt"
 	"log"
 	"time"
 	_ "time/tzdata"
@@ -15,4 +16,9 @@ func LocationBR() *time.Location {
 	}
 
 	return loc
+}
+
+func TimeTrack(start time.Time, name string) {
+	elapsed := time.Since(start)
+	fmt.Println("==> ", name, elapsed.Milliseconds())
 }
