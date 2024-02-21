@@ -9,22 +9,33 @@ import (
 
 	"github.com/JPauloMoura/rinha-backend-q1-2024/internal/handler"
 	"github.com/JPauloMoura/rinha-backend-q1-2024/internal/repository"
+	"github.com/JPauloMoura/rinha-backend-q1-2024/internal/service"
 	"github.com/go-chi/chi/v5"
 )
 
 func main() {
-	// defineLogger()
-	repository.ConnectDB()
+	pool := repository.ConnectDB()
+
+	h := handler.Handler{
+		Svc: service.Service{
+			Repo: repository.Repo{
+				DB: repository.Database{
+					Connection: pool,
+				},
+			},
+		},
+	}
 
 	router := chi.NewMux()
-	router.Post("/clientes/{id}/transacoes", handler.CreateTransaction)
-	router.Get("/clientes/{id}/extrato", handler.GenerateExtract)
+	router.Post("/clientes/{id}/transacoes", h.CreateTransaction)
+	router.Get("/clientes/{id}/extrato", h.GenerateExtract)
 
-	if os.Getenv("PPROF") != "" {
-		go func() {
-			http.ListenAndServe(":3333", nil)
-		}()
-	}
+	// if os.Getenv("PPROF") != "" {
+	// 	println("======== SEM PPROF =======")
+	// 	go func() {
+	// 		http.ListenAndServe(":3333", nil)
+	// 	}()
+	// }
 
 	slog.Info("server is running...")
 	http.ListenAndServe(":3001", router)

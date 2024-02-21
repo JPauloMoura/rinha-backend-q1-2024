@@ -6,46 +6,56 @@ import (
 
 	"github.com/JPauloMoura/rinha-backend-q1-2024/internal/entities"
 	"github.com/JPauloMoura/rinha-backend-q1-2024/internal/repository"
-	"github.com/JPauloMoura/rinha-backend-q1-2024/pkg/date"
 )
 
-func GenerateExtract(ctx context.Context, clientId int) (*Extract, error) {
-	exDb, err := repository.ListTransaction(ctx, clientId)
+type Service struct {
+	Repo repository.Repo
+}
+
+func (s Service) GenerateExtract(ctx context.Context, id int) (*Extract, error) {
+	transactions, err := s.Repo.ListTransaction(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	extract := NewExtract(exDb)
-
-	return extract, nil
+	return constructExtract(transactions), nil
 }
 
-func NewExtract(ex []repository.ExtractDB) *Extract {
-	ext := Extract{
-		Saldo: ClientSaldo{
-			Total:       ex[0].Saldo,
-			DataExtrato: time.Now().In(date.LocationBR()).String(),
-			Limite:      ex[0].Limit,
-		},
-		UltimasTransacoes: make([]entities.Transaction, 0),
+func constructExtract(transactions []repository.TransactionWithAccount) *Extract {
+	if len(transactions) == 0 {
+		return &Extract{}
 	}
 
-	for _, t := range ex {
-		if t.Transaction != nil {
-			ext.UltimasTransacoes = append(ext.UltimasTransacoes, *t.Transaction)
+	ext := Extract{
+		Balancer: BalanceUserInfo{
+			Total:     transactions[0].AccountBalance,
+			CreatedAt: time.Now().UTC().String(),
+			Limit:     transactions[0].AccountLimit,
+		},
+		LatestTransactions: make([]entities.Transaction, 0),
+	}
+
+	for _, t := range transactions {
+		if t.TransactionId != nil {
+			ext.LatestTransactions = append(ext.LatestTransactions, entities.Transaction{
+				Value:       *t.Value,
+				Type:        *t.Type,
+				Description: *t.Description,
+				CreatedAt:   *t.CreatedAt,
+			})
 		}
 	}
 
 	return &ext
 }
 
-type ClientSaldo struct {
-	Total       int    `json:"total"`
-	DataExtrato string `json:"data_extrato"`
-	Limite      int    `json:"limite"`
+type Extract struct {
+	Balancer           BalanceUserInfo        `json:"saldo"`
+	LatestTransactions []entities.Transaction `json:"ultimas_transacoes"`
 }
 
-type Extract struct {
-	Saldo             ClientSaldo            `json:"saldo"`
-	UltimasTransacoes []entities.Transaction `json:"ultimas_transacoes"`
+type BalanceUserInfo struct {
+	Total     int    `json:"total"`
+	CreatedAt string `json:"data_extrato"`
+	Limit     int    `json:"limite"`
 }
