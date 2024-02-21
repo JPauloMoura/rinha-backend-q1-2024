@@ -13,27 +13,27 @@ services:
     hostname: api-01
     environment:
       DB_CONNECTION_STRING: postgres://user:password@postgres:5432/rinha_db?sslmode=disable
-      MAX_CONN: 40
-      MIN_CONN: 40
+      MAX_CONN: 20
+      MIN_CONN: 5
     ports:
-      - "8080:8080"
-      - "3333:3333" # profiler port
+      - "8080:3001"
+      # - "3333:3333" # profiler port
     depends_on:
       - postgres
     restart: on-failure
     deploy:
       resources:
         limits:
-          cpus: "0.5"
-          memory: "155MB"
+          cpus: "0.3"
+          memory: "90MB"
 
   api-02:
     <<: *api
     container_name: api-02
     hostname: api-02
     ports:
-      - "8081:8080"
-      - "3334:3333" # profiler port
+      - "8081:3001"
+      # - "3334:3333" # profiler port
 
 
   nginx:
@@ -50,12 +50,12 @@ services:
     restart: on-failure
     ports:
       - "9999:9999"
-      - "9998:9998" # profiler port
+      # - "9998:9998" # profiler port
     deploy:
       resources:
         limits:
-          cpus: "0.2"
-          memory: "80MB"
+          cpus: "0.3"
+          memory: "50MB"
 
 
 # database
@@ -70,26 +70,28 @@ services:
       - 5432:5432
     volumes:
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./postgresql.conf:/docker-entrypoint-initdb.d/postgresql.conf
+    command: postgres -c config_file=/docker-entrypoint-initdb.d/postgresql.conf
     deploy:
       resources:
         limits:
-          cpus: "0.3"
-          memory: "160MB"
+          cpus: "0.5"
+          memory: "320MB"
           
 
 # UI pgadmin4
-  pgadmin:
-    image: dpage/pgadmin4:8.2
-    container_name: pgadmin
-    depends_on:
-      - postgres
-    environment:
-      PGADMIN_DEFAULT_EMAIL: jp@gmail.com
-      PGADMIN_DEFAULT_PASSWORD: password
-    ports:
-      - 8082:80
-    volumes:
-      - ./.data/pgadmin:/var/lib/pgadmin
+  # pgadmin:
+  #   image: dpage/pgadmin4:8.2
+  #   container_name: pgadmin
+  #   depends_on:
+  #     - postgres
+  #   environment:
+  #     PGADMIN_DEFAULT_EMAIL: jp@gmail.com
+  #     PGADMIN_DEFAULT_PASSWORD: password
+  #   ports:
+  #     - 8082:80
+  #   volumes:
+  #     - ./.data/pgadmin:/var/lib/pgadmin
       
 networks:
   default:
