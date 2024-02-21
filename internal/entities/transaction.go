@@ -6,7 +6,7 @@ import (
 )
 
 type Transaction struct {
-	ClientId    int       `json:"clientId"`
+	UserId      int       `json:"-"`
 	Value       int       `json:"valor"`
 	Type        string    `json:"tipo"`
 	Description string    `json:"descricao"`
@@ -23,7 +23,7 @@ func (t Transaction) Validate() error {
 	}
 
 	if l := len(t.Description); l < 1 || l > 10 {
-		return errors.New("description deve ter entre 1 e 10 caracteres")
+		return errors.New("description must have a maximum of 10 characters")
 	}
 
 	return nil
