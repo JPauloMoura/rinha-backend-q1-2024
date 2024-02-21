@@ -2,100 +2,67 @@ package repository
 
 import (
 	"context"
-	"errors"
 	"time"
-
-	"github.com/JPauloMoura/rinha-backend-q1-2024/internal/entities"
 )
 
-func ListTransaction(ctx context.Context, id int) ([]ExtractDB, error) {
+func (h Repo) ListTransaction(ctx context.Context, id int) ([]TransactionWithAccount, error) {
 	// defer timeTrack(time.Now(), "ListTransaction: ")
 
-	items, err := DB.Query(ctx, `
+	items, err := h.DB.Connection.Query(ctx, `
 		SELECT 
-			c.id, c.nome, c.limite, c.saldo, 
-			t.clientId, t.valor, t.tipo, t.descricao, t.realizada_em
-		FROM clientes c
+			c.id, c.name, c.acc_limit, c.balance, 
+			t.id, t.value, t.type, t.description, t.created_at
+		FROM client_account c 
 		LEFT JOIN (
-			SELECT clientId, valor, tipo, descricao, realizada_em FROM transactions
-			WHERE clientId = $1
-			ORDER BY realizada_em DESC
+			SELECT id, account_id, value, type, description, created_at FROM transaction
+			WHERE account_id = $1
+			ORDER BY created_at DESC
 			LIMIT 10
 		) t ON c.id = $1
 		WHERE c.id = $1;
 	`, id)
 
 	if err != nil {
-		// slog.Error(err.Error())
-		return nil, errors.New("internal error")
+		return nil, err
 	}
 
-	var e []ExtractDB
+	defer items.Close()
+
+	var list []TransactionWithAccount
 
 	for items.Next() {
-		var t Resp
+		var t TransactionWithAccount
 
 		if err := items.Scan(
-			&t.ClientID,
-			&t.ClientName,
-			&t.ClientLimit,
-			&t.ClientSaldo,
-			&t.TransactionID,
-			&t.Valor,
-			&t.Tipo,
-			&t.Descricao,
-			&t.RealizadaEm,
+			&t.AccountId,
+			&t.AccountName,
+			&t.AccountLimit,
+			&t.AccountBalance,
+			&t.TransactionId,
+			&t.Value,
+			&t.Type,
+			&t.Description,
+			&t.CreatedAt,
 		); err != nil {
-			// slog.Error(err.Error())
-			return nil, errors.New("internal error")
+			return nil, err
 		}
 
-		if t.TransactionID == nil {
-			e = append(e, ExtractDB{
-				entities.Client{
-					Id:    *t.ClientID,
-					Name:  *t.ClientName,
-					Limit: *t.ClientLimit,
-					Saldo: *t.ClientSaldo,
-				}, nil},
-			)
+		list = append(list, t)
 
-			continue
-		}
-
-		e = append(e, ExtractDB{
-			entities.Client{
-				Id:    *t.ClientID,
-				Name:  *t.ClientName,
-				Limit: *t.ClientLimit,
-				Saldo: *t.ClientSaldo,
-			},
-			&entities.Transaction{
-				ClientId:    *t.ClientID,
-				Value:       *t.Valor,
-				Type:        *t.Tipo,
-				Description: *t.Descricao,
-				CreatedAt:   *t.RealizadaEm,
-			},
-		})
 	}
 
-	return e, nil
+	return list, nil
 }
 
-type Resp struct {
-	ClientID      *int
-	ClientName    *string
-	ClientLimit   *int
-	ClientSaldo   *int
-	TransactionID *int
-	Valor         *int
-	Tipo          *string
-	Descricao     *string
-	RealizadaEm   *time.Time
-}
+type TransactionWithAccount struct {
+	AccountId      int
+	AccountName    string
+	AccountLimit   int
+	AccountBalance int
 
-type ExtractDB struct {
-	entities.Client
-	*entities.Transaction
+	TransactionId *int
+	Value         *int
+	Type          *string
+	Description   *string
+	CreatedAt     *time.Time
 }
