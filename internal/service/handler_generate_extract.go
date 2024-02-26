@@ -21,29 +21,18 @@ func (s Service) GenerateExtract(ctx context.Context, id int) (*Extract, error) 
 	return constructExtract(transactions), nil
 }
 
-func constructExtract(transactions []repository.TransactionWithAccount) *Extract {
-	if len(transactions) == 0 {
-		return &Extract{}
-	}
-
+func constructExtract(transactions *repository.TransactionsWithAccount) *Extract {
 	ext := Extract{
 		Balancer: BalanceUserInfo{
-			Total:     transactions[0].AccountBalance,
+			Total:     transactions.Account.Balance,
 			CreatedAt: time.Now().UTC().String(),
-			Limit:     transactions[0].AccountLimit,
+			Limit:     transactions.Account.Limit,
 		},
 		LatestTransactions: make([]entities.Transaction, 0),
 	}
 
-	for _, t := range transactions {
-		if t.TransactionId != nil {
-			ext.LatestTransactions = append(ext.LatestTransactions, entities.Transaction{
-				Value:       *t.Value,
-				Type:        *t.Type,
-				Description: *t.Description,
-				CreatedAt:   *t.CreatedAt,
-			})
-		}
+	if len(transactions.Transactions) != 0 {
+		ext.LatestTransactions = transactions.Transactions
 	}
 
 	return &ext

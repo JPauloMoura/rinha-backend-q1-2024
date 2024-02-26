@@ -5,12 +5,12 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 )
 
 func (h Handler) GenerateExtract(w http.ResponseWriter, r *http.Request) {
-	// defer timeTrack(time.Now(), "GenerateExtract")
 
 	id, err := strconv.Atoi(chi.URLParam(r, "id"))
 	_, exist := Ids[id]
@@ -19,7 +19,10 @@ func (h Handler) GenerateExtract(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	extract, err := h.Svc.GenerateExtract(context.TODO(), id)
+	ctx, cancel := context.WithTimeout(r.Context(), time.Minute*2)
+	defer cancel()
+
+	extract, err := h.Svc.GenerateExtract(ctx, id)
 	if err != nil {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		return

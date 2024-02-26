@@ -13,8 +13,8 @@ services:
     hostname: api-01
     environment:
       DB_CONNECTION_STRING: postgres://user:password@postgres:5432/rinha_db?sslmode=disable
-      MAX_CONN: 20
-      MIN_CONN: 5
+      MAX_CONN: 25
+      MIN_CONN: 25
     ports:
       - "8080:3001"
       # - "3333:3333" # profiler port

@@ -7,13 +7,13 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/JPauloMoura/rinha-backend-q1-2024/internal/entities"
 	"github.com/go-chi/chi/v5"
 )
 
 func (h Handler) CreateTransaction(w http.ResponseWriter, r *http.Request) {
-	// defer timeTrack(time.Now(), "CreateTransaction")
 	var t entities.Transaction
 
 	id, err := strconv.Atoi(chi.URLParam(r, "id"))
@@ -28,7 +28,10 @@ func (h Handler) CreateTransaction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := h.Svc.Repo.CreateTransaction(context.TODO(), id, t)
+	ctx, cancel := context.WithTimeout(r.Context(), time.Minute*2)
+	defer cancel()
+
+	resp, err := h.Svc.Repo.CreateTransaction(ctx, id, t)
 	if err != nil {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		return

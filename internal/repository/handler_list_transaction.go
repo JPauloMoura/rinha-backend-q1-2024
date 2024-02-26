@@ -2,24 +2,17 @@ package repository
 
 import (
 	"context"
-	"time"
+
+	"github.com/JPauloMoura/rinha-backend-q1-2024/internal/entities"
 )
 
-func (h Repo) ListTransaction(ctx context.Context, id int) ([]TransactionWithAccount, error) {
-	// defer timeTrack(time.Now(), "ListTransaction: ")
-
+func (h Repo) ListTransaction(ctx context.Context, id int) (*TransactionsWithAccount, error) {
 	items, err := h.DB.Connection.Query(ctx, `
-		SELECT 
-			c.id, c.name, c.acc_limit, c.balance, 
-			t.id, t.value, t.type, t.description, t.created_at
-		FROM client_account c 
-		LEFT JOIN (
-			SELECT id, account_id, value, type, description, created_at FROM transaction
-			WHERE account_id = $1
-			ORDER BY created_at DESC
-			LIMIT 10
-		) t ON c.id = $1
-		WHERE c.id = $1;
+		SELECT value, type, description, created_at 
+		FROM transaction
+		WHERE account_id = $1
+		ORDER BY created_at DESC
+		LIMIT 10
 	`, id)
 
 	if err != nil {
@@ -28,17 +21,12 @@ func (h Repo) ListTransaction(ctx context.Context, id int) ([]TransactionWithAcc
 
 	defer items.Close()
 
-	var list []TransactionWithAccount
+	var extract TransactionsWithAccount
 
 	for items.Next() {
-		var t TransactionWithAccount
+		var t entities.Transaction
 
 		if err := items.Scan(
-			&t.AccountId,
-			&t.AccountName,
-			&t.AccountLimit,
-			&t.AccountBalance,
-			&t.TransactionId,
 			&t.Value,
 			&t.Type,
 			&t.Description,
@@ -47,22 +35,23 @@ func (h Repo) ListTransaction(ctx context.Context, id int) ([]TransactionWithAcc
 			return nil, err
 		}
 
-		list = append(list, t)
-
+		extract.Transactions = append(extract.Transactions, t)
 	}
 
-	return list, nil
+	err = h.DB.Connection.QueryRow(ctx, `
+		SELECT balance, acc_limit
+		FROM client_account
+		WHERE id = $1`, id,
+	).Scan(&extract.Account.Balance, &extract.Account.Limit)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &extract, nil
 }
 
-type TransactionWithAccount struct {
-	AccountId      int
-	AccountName    string
-	AccountLimit   int
-	AccountBalance int
-
-	TransactionId *int
-	Value         *int
-	Type          *string
-	Description   *string
-	CreatedAt     *time.Time
+type TransactionsWithAccount struct {
+	Account      entities.ClientAccount
+	Transactions []entities.Transaction
 }
