@@ -2,11 +2,19 @@ package repository
 
 import (
 	"context"
+	"sync"
 
 	"github.com/JPauloMoura/rinha-backend-q1-2024/internal/entities"
 )
 
 func (h Repo) ListTransaction(ctx context.Context, id int) (*TransactionsWithAccount, error) {
+	var extract TransactionsWithAccount
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	go h.FindBalance(ctx, id, &extract, &wg)
+
 	items, err := h.DB.Connection.Query(ctx, `
 		SELECT value, type, description, created_at 
 		FROM transaction
@@ -20,8 +28,6 @@ func (h Repo) ListTransaction(ctx context.Context, id int) (*TransactionsWithAcc
 	}
 
 	defer items.Close()
-
-	var extract TransactionsWithAccount
 
 	for items.Next() {
 		var t entities.Transaction
@@ -38,17 +44,40 @@ func (h Repo) ListTransaction(ctx context.Context, id int) (*TransactionsWithAcc
 		extract.Transactions = append(extract.Transactions, t)
 	}
 
-	err = h.DB.Connection.QueryRow(ctx, `
+	// err = h.DB.Connection.QueryRow(ctx, `
+	// 	SELECT balance, acc_limit
+	// 	FROM client_account
+	// 	WHERE id = $1`, id,
+	// ).Scan(&extract.Account.Balance, &extract.Account.Limit)
+
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	wg.Wait()
+	return &extract, nil
+}
+
+func (h Repo) FindBalance(ctx context.Context, id int, t *TransactionsWithAccount, w *sync.WaitGroup) {
+	defer w.Done()
+	var (
+		balance int
+		limit   int
+	)
+
+	err := h.DB.Connection.QueryRow(ctx, `
 		SELECT balance, acc_limit
 		FROM client_account
 		WHERE id = $1`, id,
-	).Scan(&extract.Account.Balance, &extract.Account.Limit)
+	).Scan(&balance, &limit)
+
+	t.Account.Balance = balance
+	t.Account.Limit = limit
 
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
 
-	return &extract, nil
 }
 
 type TransactionsWithAccount struct {
