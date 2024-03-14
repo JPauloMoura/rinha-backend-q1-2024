@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/JPauloMoura/rinha-backend-q1-2024/internal/entities"
+	"github.com/jackc/pgx/v5"
 )
 
 type CreateTransactionResponse struct {
@@ -17,8 +18,14 @@ func (h Repo) CreateTransaction(ctx context.Context, accId int, transaction enti
 		limit         int
 		clientAccount entities.ClientAccount
 	)
+	// Iniciar uma transação bloqueante
+	txOpts := pgx.TxOptions{
+		// IsoLevel:       pgx.Serializable,
+		// AccessMode:     pgx.ReadWrite,
+		// DeferrableMode: pgx.NotDeferrable,
+	}
 
-	tx, err := h.DB.Connection.Begin(ctx)
+	tx, err := h.DB.Connection.BeginTx(ctx, txOpts)
 	if err != nil {
 		return nil, err
 	}
