@@ -5,77 +5,87 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/lib/pq"
 )
 
+var once sync.Once
+var DB *pgxpool.Pool
+
 func ConnectDB() *pgxpool.Pool {
+	define()
 
-	mx, err := strconv.Atoi(os.Getenv("MAX_CONN"))
-	if err != nil {
-		log.Fatal(err)
-	}
-	min, err := strconv.Atoi(os.Getenv("MIN_CONN"))
-	if err != nil {
-		log.Fatal(err)
-	}
+	return DB
+}
 
-	var (
-		defaultMaxConns          = int32(mx)
-		defaultMinConns          = int32(min)
-		defaultMaxConnLifetime   = time.Hour
-		defaultMaxConnIdleTime   = time.Minute * 30
-		defaultHealthCheckPeriod = time.Minute
-		defaultConnectTimeout    = time.Second * 30
-	)
+func define() {
+	once.Do(func() {
 
-	connectionString := os.Getenv("DB_CONNECTION_STRING")
+		mx, err := strconv.Atoi(os.Getenv("MAX_CONN"))
+		if err != nil {
+			log.Fatal(err)
+		}
+		min, err := strconv.Atoi(os.Getenv("MIN_CONN"))
+		if err != nil {
+			log.Fatal(err)
+		}
 
-	cfg, err := pgxpool.ParseConfig(connectionString)
-	if err != nil {
-		// slog.Debug("failed parse config. check if the database is running or if the connection string is correct",
-		// slog.Any("error", err),
-		// slog.String("connectionString", connectionString),
-		// )
-		log.Fatal("failed parse config", err)
-	}
+		var (
+			defaultMaxConns          = int32(mx)
+			defaultMinConns          = int32(min)
+			defaultMaxConnLifetime   = time.Hour
+			defaultMaxConnIdleTime   = time.Minute * 30
+			defaultHealthCheckPeriod = time.Minute
+			defaultConnectTimeout    = time.Second * 30
+		)
 
-	cfg.MaxConns = defaultMaxConns
-	cfg.MinConns = defaultMinConns
-	cfg.MaxConnLifetime = defaultMaxConnLifetime
-	cfg.MaxConnIdleTime = defaultMaxConnIdleTime
-	cfg.HealthCheckPeriod = defaultHealthCheckPeriod
-	cfg.ConnConfig.ConnectTimeout = defaultConnectTimeout
+		connectionString := os.Getenv("DB_CONNECTION_STRING")
 
-	ctx := context.TODO()
-	conn, err := pgxpool.NewWithConfig(ctx, cfg)
-	if err != nil {
-		// slog.Debug("failed to create connection. check if the database is running or if the connection string is correct",
-		// slog.Any("error", err),
-		// slog.String("connectionString", connectionString),
-		// )
-		log.Fatal("failed to create connection", err)
-	}
+		cfg, err := pgxpool.ParseConfig(connectionString)
+		if err != nil {
+			// slog.Debug("failed parse config. check if the database is running or if the connection string is correct",
+			// slog.Any("error", err),
+			// slog.String("connectionString", connectionString),
+			// )
+			log.Fatal("failed parse config", err)
+		}
 
-	if err != nil || conn == nil {
-		// slog.Debug("failed to open conection. check if the database is running or if the connection string is correct",
-		// slog.Any("error", err),
-		// slog.String("connectionString", connectionString),
-		// )
-		log.Fatal("failed to open conection", err)
-	}
+		cfg.MaxConns = defaultMaxConns
+		cfg.MinConns = defaultMinConns
+		cfg.MaxConnLifetime = defaultMaxConnLifetime
+		cfg.MaxConnIdleTime = defaultMaxConnIdleTime
+		cfg.HealthCheckPeriod = defaultHealthCheckPeriod
+		cfg.ConnConfig.ConnectTimeout = defaultConnectTimeout
 
-	if err := conn.Ping(ctx); err != nil {
-		// slog.Debug("failed to ping on database. check if the database is running or if the connection string is correct",
-		// slog.Any("error", err),
-		// slog.String("connectionString", connectionString),
-		// )
-		log.Fatal("failed to ping on database", err)
-	}
+		ctx := context.TODO()
+		DB, err = pgxpool.NewWithConfig(ctx, cfg)
+		if err != nil {
+			// slog.Debug("failed to create connection. check if the database is running or if the connection string is correct",
+			// slog.Any("error", err),
+			// slog.String("connectionString", connectionString),
+			// )
+			log.Fatal("failed to create connection", err)
+		}
 
-	return conn
+		if err != nil || DB == nil {
+			// slog.Debug("failed to open conection. check if the database is running or if the connection string is correct",
+			// slog.Any("error", err),
+			// slog.String("connectionString", connectionString),
+			// )
+			log.Fatal("failed to open conection", err)
+		}
+
+		if err := DB.Ping(ctx); err != nil {
+			// slog.Debug("failed to ping on database. check if the database is running or if the connection string is correct",
+			// slog.Any("error", err),
+			// slog.String("connectionString", connectionString),
+			// )
+			log.Fatal("failed to ping on database", err)
+		}
+	})
 }
 
 type Database struct {
