@@ -28,7 +28,7 @@ func (h Handler) CreateTransaction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(r.Context(), time.Minute*2)
+	ctx, cancel := context.WithTimeout(r.Context(), time.Minute*10)
 	defer cancel()
 
 	resp, err := h.Svc.Repo.CreateTransaction(ctx, id, t)

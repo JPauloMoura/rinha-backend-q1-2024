@@ -19,7 +19,7 @@ func (h Handler) GenerateExtract(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(r.Context(), time.Minute*2)
+	ctx, cancel := context.WithTimeout(r.Context(), time.Minute*10)
 	defer cancel()
 
 	extract, err := h.Svc.GenerateExtract(ctx, id)
