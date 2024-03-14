@@ -14,7 +14,7 @@ services:
     environment:
       DB_CONNECTION_STRING: postgres://user:password@postgres:5432/rinha_db?sslmode=disable
       MAX_CONN: 25
-      MIN_CONN: 25
+      MIN_CONN: 6
     ports:
       - "8080:3001"
       # - "3333:3333" # profiler port
@@ -25,7 +25,7 @@ services:
       resources:
         limits:
           cpus: "0.3"
-          memory: "90MB"
+          memory: "70MB"
 
   api-02:
     <<: *api
@@ -76,22 +76,8 @@ services:
       resources:
         limits:
           cpus: "0.5"
-          memory: "320MB"
+          memory: "360MB"
           
-
-# UI pgadmin4
-  # pgadmin:
-  #   image: dpage/pgadmin4:8.2
-  #   container_name: pgadmin
-  #   depends_on:
-  #     - postgres
-  #   environment:
-  #     PGADMIN_DEFAULT_EMAIL: jp@gmail.com
-  #     PGADMIN_DEFAULT_PASSWORD: password
-  #   ports:
-  #     - 8082:80
-  #   volumes:
-  #     - ./.data/pgadmin:/var/lib/pgadmin
       
 networks:
   default:
